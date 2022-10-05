@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'ducknet'
+include 'module'
+
