@@ -7,4 +7,5 @@ public class PhysicalInterface {
 
     String name;
     Link link;
+    Node node;
 }
