@@ -1,9 +1,6 @@
 package org.example.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Graph {
     String typologyName;
@@ -34,19 +31,33 @@ public class Graph {
         StringBuilder builder = new StringBuilder("```mermaid\n");
         builder.append("flowchart LR\n");
         nodeList.forEach(node -> {
+            builder.append(String.format("%s[%s]%n", node.name, getNodeDesc(node)));
             for (int i = 0; i < node.availableSlotIdx; i++) {
                 PhysicalInterface physicalInterface = node.physicalInterfaceSlots[i];
                 Link link = physicalInterface.link;
                 if (!linkSet.contains(link)) {
                     linkSet.add(link);
                     PhysicalInterface anotherInterface = link.physicalInterface1 == physicalInterface ? link.physicalInterface2 : link.physicalInterface1;
-                    builder.append(String.format("%s o--o |%s|%s%n", node.name,
-                            physicalInterface.name + "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + anotherInterface.name,
+                    builder.append(String.format("%s o--o |\"%s\"|%s%n", node.name,
+                            getInterfaceDesc(physicalInterface, anotherInterface),
                             anotherInterface.node.name));
                 }
             }
         });
         builder.append("```");
         return builder.toString();
+    }
+
+    private String getInterfaceDesc(PhysicalInterface physicalInterface, PhysicalInterface anotherInterface) {
+        String gap = "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp";
+        InterfaceNetworkProp prop = physicalInterface.interfaceNetworkProp;
+        InterfaceNetworkProp anotherProp = anotherInterface.interfaceNetworkProp;
+        return String.format("%s%s%s\\n%s%s%s\\n%s%s%s\\n", physicalInterface.name, gap, anotherInterface.name,
+                Optional.ofNullable(prop).map(item -> item.ipAddress.getHostAddress() + "/" + item.mask).orElse(""), gap, Optional.ofNullable(anotherProp).map(item -> item.ipAddress.getHostAddress() + "/" + item.mask).orElse(""),
+                Optional.ofNullable(prop).map(item -> item.macAddress).orElse(""), gap, Optional.ofNullable(anotherProp).map(item -> item.macAddress).orElse(""));
+    }
+
+    private String getNodeDesc(Node node) {
+        return node.name + (Objects.nonNull(node.nodeNetworkProp) ? "\\n" + node.nodeNetworkProp.loopback.getHostAddress() : "");
     }
 }
