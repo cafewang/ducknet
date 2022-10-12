@@ -1,5 +1,7 @@
 package org.example.model;
 
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
 import java.util.*;
 
 public class Graph {
@@ -24,6 +26,14 @@ public class Graph {
         link.physicalInterface2.node = node2;
         node1.physicalInterfaceSlots[node1.availableSlotIdx++] = link.physicalInterface1;
         node2.physicalInterfaceSlots[node2.availableSlotIdx++] = link.physicalInterface2;
+        try {
+            node1.selector.wakeup();
+            link.physicalInterface1.channel.register(node1.selector, SelectionKey.OP_READ);
+            node2.selector.wakeup();
+            link.physicalInterface2.channel.register(node2.selector, SelectionKey.OP_READ);
+        } catch (ClosedChannelException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String toMermaid() {
@@ -37,7 +47,7 @@ public class Graph {
                 Link link = physicalInterface.link;
                 if (!linkSet.contains(link)) {
                     linkSet.add(link);
-                    PhysicalInterface anotherInterface = link.physicalInterface1 == physicalInterface ? link.physicalInterface2 : link.physicalInterface1;
+                    PhysicalInterface anotherInterface = physicalInterface.getAnotherInterface();
                     builder.append(String.format("%s o--o |\"%s\"|%s%n", node.name,
                             getInterfaceDesc(physicalInterface, anotherInterface),
                             anotherInterface.node.name));
